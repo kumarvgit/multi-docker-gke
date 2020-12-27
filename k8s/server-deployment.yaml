@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      component: server
+  template:
+    metadata:
+      labels:
+        component: server
+    spec:
+      containers:
+        - name: server
+          # this is breaking on 27-12-2020
+          # image: stephengrider/multi-server
+          image: cygnetops/multi-server-pgfix-5-11
+          ports:
+            - containerPort: 5000
+          env:
+            - name: REDIS_HOST
+              value: redis-cluster-ip-service
+            - name: REDIS_PORT
+              value: '6379'
+            - name: PGUSER
+              value: postgres
+            - name: PGHOST
+              value: postgres-cluster-ip-service
+            - name: PGPORT
+              value: '5432'
+            - name: PGDATABASE
+              value: postgres
+            - name: PGPASSWORD # name of environment variable
+              valueFrom: # get value from somewhere
+                # name this is the name of the secret array in which the password is stored
+                # syntax "kubectl create secret <TYPE-OF-SECRET>  <SECRET-NAME> <SOURCE> <KEY=VALUE>"
+                # "kubectl create secret generic pgpassword --from-literal PGPASSWORD=12345asdf"
+                # since the key and value is stored as ref
+                # visual
+                # SECRET_NAME    KEY            VALUE
+                # -------------
+                # | pgpassword | PGPASSWORD     12345asdf
+                # |            | MY_OTHER_KEY   super_secret_value
+                # |------------
+                # 
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD
